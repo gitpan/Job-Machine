@@ -1,6 +1,7 @@
-Build.pl
+Build.PL
 Changes
 lib/Job/Machine.pod
+lib/Job/Machine.pm
 lib/Job/Machine/Base.pm
 lib/Job/Machine/Client.pm
 lib/Job/Machine/Worker.pm
@@ -12,3 +13,4 @@ t/pod_coverage.t
 t/Worker.pm
 t/worker.t
 META.yml
+Makefile.PL

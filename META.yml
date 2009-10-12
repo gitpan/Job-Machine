@@ -1,6 +1,6 @@
 ---
 name: Job-Machine
-version: 0.001
+version: 0.002
 author:
   - Kaare Rasmussen <kaare@cpan.org>.
 abstract: Job queue handling
@@ -12,6 +12,9 @@ requires:
   Net::Stomp: 0.34
   perl: 5.8.3
 provides:
+  Job::Machine:
+    file: lib/Job/Machine.pm
+    version: 0.002
   Job::Machine::Base:
     file: lib/Job/Machine/Base.pm
   Job::Machine::Client:
