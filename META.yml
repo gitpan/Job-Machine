@@ -1,6 +1,6 @@
 ---
 name: Job-Machine
-version: 0.002
+version: 0.003
 author:
   - Kaare Rasmussen <kaare@cpan.org>.
 abstract: Job queue handling
@@ -14,7 +14,7 @@ requires:
 provides:
   Job::Machine:
     file: lib/Job/Machine.pm
-    version: 0.002
+    version: 0.003
   Job::Machine::Base:
     file: lib/Job/Machine/Base.pm
   Job::Machine::Client:
