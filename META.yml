@@ -1,27 +1,31 @@
 ---
-name: Job-Machine
-version: 0.003
+abstract: 'Job queue handling'
 author:
-  - Kaare Rasmussen <kaare@cpan.org>.
-abstract: Job queue handling
+  - 'Kaare Rasmussen <kaare@cpan.org>.'
+configure_requires:
+  Module::Build: 0.36
+generated_by: 'Module::Build version 0.3607'
 license: perl
-resources:
-  license: http://dev.perl.org/licenses/
-requires:
-  JSON::XS: 2.1
-  Net::Stomp: 0.34
-  perl: 5.8.3
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: Job-Machine
 provides:
   Job::Machine:
     file: lib/Job/Machine.pm
-    version: 0.003
+    version: 0.01
   Job::Machine::Base:
     file: lib/Job/Machine/Base.pm
   Job::Machine::Client:
     file: lib/Job/Machine/Client.pm
+  Job::Machine::DB:
+    file: lib/Job/Machine/DB.pm
   Job::Machine::Worker:
     file: lib/Job/Machine/Worker.pm
-generated_by: Module::Build version 0.280801
-meta-spec:
-  url: http://module-build.sourceforge.net/META-spec-v1.2.html
-  version: 1.2
+requires:
+  DBD::Pg: 2.0
+  JSON::XS: 2.25
+  perl: v5.8.3
+resources:
+  license: http://dev.perl.org/licenses/
+version: 0.01

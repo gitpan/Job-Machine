@@ -1,0 +1,37 @@
+blog
+---
+Poll (ressource consumption when not doing anything, waiting when should be working)
+Open another port (firewall, company policy)
+From 9.0 the server guarantees delivery ... blah blah
+
+Net::Stomp
+
+Often enough you already have a database opened, so you just pass a dbh to Job-Machine.
+
+* schema
+* Timeout
+
+A typical use case is for a web request where the processing simply will take too long time.
+
+1. The job machine listens to the queue named 'slow'
+2. web process sends a request to the 'slow' queue. It gets back a ticket number, e.g. 42.
+   The web server can now listen on queue 'slow.42'. It may do this through a redirct or ajax method.
+3. The job machine wakes up, process the request, and notifies back on queue 'slow.42' when finished.
+4. The web server can pick up the result and display a status.
+
+
+
+promo
+---
+What sets Job::Machine apart from other similar solutions is the message system. It's fast and efficient. using PostgreSQL's internal LISTEN/NOTIFY logic.
+Normally, you either resort to polling or you'd have to have a separate server to dispatch jobs.
+
+With polling you have the problem that a job will not start immediately after it's put in the queue. It may wait up to the amount of the timeslice that you assigned as the
+interval between polling requests. If you set it too low, you waste a lot of system ressources. If you set it too high, the jobs can stay in the queue for too long.
+
+Before starting Job::Machine I looked for a good, reliable job scheduler in Perl. I didn't find any (there may be some, but I wasn't able to find them). So I considered
+using Apache's <name here> and Net::Stomp. Even though that combination might have worked, it introduces a foreign component into the equation, adding complexity. Also
+it's a moving part, guaranteed to break once in a while. And finally you have to use a port for the server to listen on. It can be a problem if there are firewalls involved,
+especially if they are controlled by computer departments. It can be a daunting task to request for a port to be opened up!
+
+Job::Machine is designed with Web environments in mind, but it is really a generic Job Scheduler, making it easy and fast to deploy tasks and receive replies.

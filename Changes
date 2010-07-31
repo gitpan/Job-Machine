@@ -1,3 +1,9 @@
+0.010 2010-7-31
+ - Ripped out Net::Stomp and put in PostgreSQL's notify/listen construct
+ - instead.
+ - Added a sql file to create jobmachine schema and tables.
+ - Added Test::Class tests
+
 0.003 2009-10-13
   - Remove unnecessary reply hash key
 

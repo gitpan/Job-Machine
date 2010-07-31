@@ -1,71 +1,79 @@
 package Job::Machine::Client;
 
+use strict;
+use warnings;
+
+use base 'Job::Machine::Base';
+
+sub send {
+	my ($self, $data, $queue) = @_;
+	$queue ||= $self->{queue};
+	my $id = $self->db->insert_task($data,$queue);
+	$self->{db}->notify(queue => $queue);
+	return $id;
+}
+
+sub check {
+	my ($self, $id) = @_;
+	$id ||= $self->id;
+	$self->{subscribed} ||= $self->subscribe($id,1); # Subscribe if not already subscribed
+	return $self->db->get_notification;
+}
+
+sub uncheck {
+	my ($self, $id) = @_;
+	$id ||= $self->id;
+	delete $self->{subscribed};
+	$self->db->unlisten(queue => $id, reply => 1);
+	return $self->db->get_notification;
+}
+
+sub receive {
+	my ($self, $id) = @_;
+	$id ||= $self->id;
+	return $self->db->fetch_result($id);
+};
+
+1;
+__END__
 =head1 NAME
 
 Job::Machine::Client - Class for Job Clients
 
 =head1 METHODS
 
-=cut
-
-use strict;
-use warnings;
-use JSON::XS;
-
-use base 'Job::Machine::Base';
-
 =head2 send
 
-Send a message to the configured queue
+ Send a message to the configured queue
 
-=cut
+  Parameters
+  data - data to pass to the worker process
 
-sub send {
-    my ( $self, $data ) = @_;
-    my $stomp  = $self->{stomp};
-    my $frozen = encode_json({ id => $self->id, data => $data, });
-    $stomp->send(
-        {   destination => $self->{config}{queue},
-            body        => $frozen,
-            persistent  => 'true',
-        }
-    );
-}
+ Returns the message id.
 
 =head2 check
 
-Check for reply. Remember to use same id as when the initial message was sent.
+ Check for reply. 
+ 
+ Parameter: The message id.
 
-=cut
+ Will listen for any answers from the worker(s) and return true if there is one.
 
-sub check {
-    my ($self) = @_;
-    my $queue = $self->{config}{queue} . '/' . $self->id;
-    $self->subscribe($queue);
-    my $stomp    = $self->{stomp};
-    my $can_read = $stomp->can_read({
-        timeout     => '0.1',
-        destination => $queue,
-    });
-}
+=head2 uncheck
+
+ Check for reply. 
+ 
+ Parameter: The message id.
+
+ Will stop listening for any answers.
 
 =head2 receive
 
-Receive the reply. Remember to use same id as when the initial message was sent.
+ Receive the reply.
 
-=cut
+ Parameter: The message id.
 
-sub receive {
-    my ( $self ) = @_;
-
-    my $queue = $self->{config}{queue} . '/' . $self->id;
-	my $stomp = $self->{stomp};
-    my $frame = $stomp->receive_frame;
-    my $thawed = decode_json( $frame->body );
-    $stomp->ack( { frame => $frame } );
-    $stomp->disconnect();
-	return $thawed;
-};
+ Will get the latest reply to a message or null if no reply.
 
 =head1 SEE ALSO
 
@@ -77,11 +85,9 @@ Kaare Rasmussen <kaare@cpan.org>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2009, Kaare Rasmussen
+Copyright (C) 2009-2010, Kaare Rasmussen
 
 This module is free software; you can redistribute it or modify it
 under the same terms as Perl itself.
 
 =cut
-
-1;
