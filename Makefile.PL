@@ -7,7 +7,8 @@ WriteMakefile
           'VERSION_FROM' => 'lib/Job/Machine.pm',
           'PREREQ_PM' => {
                            'DBD::Pg' => '2.0',
-                           'JSON::XS' => '2.25'
+                           'JSON::XS' => '2.25',
+                           'Test::Class' => '0.31'
                          },
           'INSTALLDIRS' => 'site',
           'EXE_FILES' => [],

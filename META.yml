@@ -13,7 +13,7 @@ name: Job-Machine
 provides:
   Job::Machine:
     file: lib/Job/Machine.pm
-    version: 0.01
+    version: 0.011
   Job::Machine::Base:
     file: lib/Job/Machine/Base.pm
   Job::Machine::Client:
@@ -25,7 +25,8 @@ provides:
 requires:
   DBD::Pg: 2.0
   JSON::XS: 2.25
+  Test::Class: 0.31
   perl: v5.8.3
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.01
+version: 0.011
