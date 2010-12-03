@@ -1,4 +1,7 @@
 package Job::Machine::DB;
+BEGIN {
+  $Job::Machine::DB::VERSION = '0.14';
+}
 
 use strict;
 use warnings;
@@ -361,7 +364,17 @@ sub DESTROY {
 }
 
 1;
-__END__
+
+
+=pod
+
+=head1 NAME
+
+Job::Machine::DB
+
+=head1 VERSION
+
+version 0.14
 
 =head1 NAME
 
@@ -381,9 +394,23 @@ Job::Machine::DB - Database class for Job::Machine
       dsn   => @dsn,
   );
 
-
 =head2 set_listen
 
 Sets up the listener
 
+=head1 AUTHOR
+
+Kaare Rasmussen <kaare at cpan dot net>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2010 by Kaare Rasmussen.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
+
+
+__END__
+

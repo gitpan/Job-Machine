@@ -1,0 +1,53 @@
+{
+   "abstract" : "Job queue handling",
+   "author" : [
+      "Kaare Rasmussen <kaare at cpan dot net>"
+   ],
+   "dynamic_config" : 0,
+   "generated_by" : "Dist::Zilla version 4.102343, CPAN::Meta::Converter version 2.102400",
+   "license" : [
+      "perl_5"
+   ],
+   "meta-spec" : {
+      "url" : "http://search.cpan.org/perldoc?CPAN::Meta::Spec",
+      "version" : "2"
+   },
+   "name" : "Job-Machine",
+   "prereqs" : {
+      "build" : {
+         "requires" : {
+            "Module::Build" : "0.3601"
+         }
+      },
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "6.31",
+            "Module::Build" : "0.3601"
+         }
+      },
+      "runtime" : {
+         "requires" : {
+            "Carp" : 0,
+            "DBI" : 0,
+            "JSON::XS" : 0,
+            "constant" : 0
+         }
+      },
+      "test" : {
+         "requires" : {
+            "Test::Class" : 0,
+            "Test::More" : 0
+         }
+      }
+   },
+   "release_status" : "stable",
+   "resources" : {
+      "repository" : {
+         "type" : "git",
+         "url" : "git://github.com/kaare/Job-Machine.git",
+         "web" : "http://github.com/kaare/Job-Machine.git"
+      }
+   },
+   "version" : "0.14"
+}
+

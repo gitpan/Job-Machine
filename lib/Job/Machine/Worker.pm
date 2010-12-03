@@ -1,4 +1,7 @@
 package Job::Machine::Worker;
+BEGIN {
+  $Job::Machine::Worker::VERSION = '0.14';
+}
 
 use strict;
 use warnings;
@@ -86,10 +89,17 @@ sub remove_after {return 30}
 sub keep_running {return 1}
 
 1;
-__END__
+
+
+=pod
+
 =head1 NAME
 
-Job::Machine::Worker - Base class for Job Workers
+Job::Machine::Worker
+
+=head1 VERSION
+
+version 0.14
 
 =head1 DESCRIPTION
 
@@ -103,6 +113,10 @@ Job::Machine::Worker - Base class for Job Workers
 	  my ($self, $task) = @_;
 	  ... do stuff
   };
+
+=head1 NAME
+
+Job::Machine::Worker - Base class for Job Workers
 
 =head1 METHODS
 
@@ -155,7 +169,6 @@ If the default of 30 days isn't suitable, return the number of days a task will
 remain in the database before being removed.
 
 Return 0 if you never want tasks to be removed.
-
 
 =head3 keep_running
 
@@ -212,4 +225,18 @@ Copyright (C) 2009-2010, Kaare Rasmussen
 This module is free software; you can redistribute it or modify it
 under the same terms as Perl itself.
 
+=head1 AUTHOR
+
+Kaare Rasmussen <kaare at cpan dot net>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2010 by Kaare Rasmussen.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 =cut
+
+
+__END__
