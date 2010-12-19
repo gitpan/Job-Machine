@@ -44,10 +44,10 @@
    "resources" : {
       "repository" : {
          "type" : "git",
-         "url" : "git://github.com/kaare/Job-Machine.git",
-         "web" : "http://github.com/kaare/Job-Machine.git"
+         "url" : "git://github.com/kaare/JobMachine.git",
+         "web" : "http://github.com/kaare/JobMachine"
       }
    },
-   "version" : "0.14"
+   "version" : "0.15"
 }
 

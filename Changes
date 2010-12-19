@@ -1,5 +1,10 @@
 Revision history for Job-Machine
 
+0.15    2010-12-19 20:53:02 Europe/Copenhagen
+ - Guarantee that fetch task for updating returns one task, and that task is
+   locked for this worker
+ - Documentation update
+
 0.14    2010-12-03 09:45:17 Europe/Copenhagen
  - Begin using Dist::Zilla
 

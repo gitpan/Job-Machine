@@ -1,6 +1,6 @@
 package Job::Machine::Worker;
 BEGIN {
-  $Job::Machine::Worker::VERSION = '0.14';
+  $Job::Machine::Worker::VERSION = '0.15';
 }
 
 use strict;
@@ -99,7 +99,7 @@ Job::Machine::Worker
 
 =head1 VERSION
 
-version 0.14
+version 0.15
 
 =head1 DESCRIPTION
 
@@ -182,11 +182,15 @@ Worker will wait for next message if this method returns true.
 
   Reply to a message. Use from within a Worker's process method.
 
+  Marks the task as done,
+
 =head3 result
 
   $worker->result($result_data);
 
   Save the result of the task. Use from within a Worker's process method.
+
+  Marks the task as done,
 
 =head3 db
 

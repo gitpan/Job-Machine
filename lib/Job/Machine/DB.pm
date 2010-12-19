@@ -1,6 +1,6 @@
 package Job::Machine::DB;
 BEGIN {
-  $Job::Machine::DB::VERSION = '0.14';
+  $Job::Machine::DB::VERSION = '0.15';
 }
 
 use strict;
@@ -75,25 +75,40 @@ sub fetch_work_task {
 		UPDATE
 			"$self->{schema}".$self->{current_table} t
 		SET
-			status=?,
+			status=100,
 			modified=default
-		FROM
-			"$self->{schema}".class c
 		WHERE
-			status=? AND t.class_id=c.class_id AND c.name=?
-			AND run_after IS NULL or run_after > now()
+			task_id = (
+				SELECT
+					min(task_id)
+				FROM
+					"$self->{schema}".$self->{current_table} t
+				JOIN
+					"jobmachine".class c
+				USING
+					(class_id)
+				WHERE
+					t.status=0
+				AND
+					c.name=?
+				AND
+					t.run_after IS NULL
+				OR
+					t.run_after > now()
+			)
+		AND
+			t.status=0
 		RETURNING
 			*
+		;
 	};
-	my $startstatus = 0; # read this
-	my $endstatus = 100; # set to this
 	my $task = $self->select_first(
 		sql => $sql,
-		data => [$endstatus,$startstatus,$queue]
+		data => [$queue]
 	) || return;
 
 	$self->{task_id} = $task->{task_id};
-	$task->{data} = decode_json( delete $task->{parameters} )->{data};
+	$task->{data} = decode_json( delete $task->{parameters} );
 	return $task;
 }
 
@@ -130,13 +145,28 @@ sub set_task_status {
 sub fetch_class {
 	my ($self,$queue) = @_;
 	$self->{current_table} = 'class';
-	my $sql = qq{SELECT * FROM "$self->{schema}".$self->{current_table} WHERE name=?};
+	my $sql = qq{
+		SELECT
+			*
+		FROM
+			"$self->{schema}".$self->{current_table}
+		WHERE
+			name=?
+	};
 	return $self->select_first(sql => $sql,data => [$queue]) || $self->insert_class($queue);
 }
 
 sub insert_class {
 	my ($self,$queue) = @_;
-	my $sql = qq{INSERT INTO "$self->{schema}".$self->{current_table} (name) VALUES (?) RETURNING *};
+	my $sql = qq{
+		INSERT INTO
+			"$self->{schema}".$self->{current_table}
+			(name)
+		VALUES
+			(?)
+		RETURNING
+			*
+	};
 	$self->select_first(sql => $sql,data => [$queue]);
 }
 
@@ -157,7 +187,16 @@ sub insert_result {
 sub fetch_result {
 	my ($self,$id) = @_;
 	$self->{current_table} = 'result';
-	my $sql = qq{SELECT * FROM "$self->{schema}".$self->{current_table} WHERE task_id=? ORDER BY result_id DESC};
+	my $sql = qq{
+		SELECT
+			*
+		FROM
+			"$self->{schema}".$self->{current_table}
+		WHERE
+			task_id=?
+		ORDER BY
+			result_id DESC
+	};
 	my $result = $self->select_first(sql => $sql,data => [$id]) || return;
 
 	return decode_json($result->{result})->{data};
@@ -215,7 +254,8 @@ sub fail_tasks {
 			"$self->{schema}".$self->{current_table}
 		GROUP BY
 			task_id
-		HAVING count(*)>?
+		HAVING
+			count(*)>?
 		LIMIT ?
 	};
 	my $result = $self->select_all(sql => $sql,data => [$retries,$limit]) || return 0;
@@ -355,7 +395,7 @@ sub task_id {
 	return $_[0]->{task_id} || confess "No task id";
 }
 sub disconnect {
-	return $_[0]->{dbh}->disconnect;
+	return $_[0]->{dbh}->disconnect if $_[0]->{dbh};
 }
 
 sub DESTROY {
@@ -374,7 +414,7 @@ Job::Machine::DB
 
 =head1 VERSION
 
-version 0.14
+version 0.15
 
 =head1 NAME
 
@@ -386,7 +426,7 @@ Job::Machine::DB - Database class for Job::Machine
 
   my $client = Job::Machine::DB->new(
       dbh   => $dbh,
-      jobclass => 'queue.subqueue',
+      queue => 'queue.subqueue',
 
   );
 

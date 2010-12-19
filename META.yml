@@ -22,5 +22,5 @@ requires:
   JSON::XS: 0
   constant: 0
 resources:
-  repository: git://github.com/kaare/Job-Machine.git
-version: 0.14
+  repository: git://github.com/kaare/JobMachine.git
+version: 0.15
