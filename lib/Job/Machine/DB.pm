@@ -1,6 +1,6 @@
 package Job::Machine::DB;
 BEGIN {
-  $Job::Machine::DB::VERSION = '0.15';
+  $Job::Machine::DB::VERSION = '0.16';
 }
 
 use strict;
@@ -13,37 +13,43 @@ use constant QUEUE_PREFIX    => 'jm:';
 use constant RESPONSE_PREFIX => 'jmr:';
 
 sub new {
-    my ($class, %args) = @_;
-    croak "No connect information" unless $args{dbh} or $args{dsn};
+	my ($class, %args) = @_;
+	croak "No connect information" unless $args{dbh} or $args{dsn};
+	croak "invalid queue" if ref $args{queue} and ref $args{queue} ne 'ARRAY';
 
-	$args{dbh}    ||= DBI->connect($args{dsn});
-	$args{schema} ||= 'jobmachine';
-    return bless \%args, $class;
+	$args{user}     ||= undef;
+	$args{password} ||= undef;
+	$args{db_attr}  ||= undef;
+	$args{dbh}      ||= DBI->connect($args{dsn},$args{user},$args{password},$args{db_attr});
+	$args{schema}   ||= 'jobmachine';
+	return bless \%args, $class;
 }
 
 sub listen {
-    my ($self, %args) = @_;
-    my $queue = $args{queue} || return undef;
+	my ($self, %args) = @_;
+	my $queue = $args{queue} || return undef;
 
-    my $prefix = $args{reply} ?  RESPONSE_PREFIX :  QUEUE_PREFIX;
-	$queue = $prefix . $queue;
-	$self->{dbh}->do(qq{listen "$queue";});
+	my $prefix = $args{reply} ?  RESPONSE_PREFIX :  QUEUE_PREFIX;
+	for my $q (ref $queue ? @$queue : ($queue)) {
+		$self->{dbh}->do(qq{listen "$prefix$q";});
+	}
 }
 
 sub unlisten {
-    my ($self, %args) = @_;
-    my $queue = $args{queue} || return undef;
+	my ($self, %args) = @_;
+	my $queue = $args{queue} || return undef;
 
-    my $prefix = $args{reply} ?  RESPONSE_PREFIX :  QUEUE_PREFIX;
-	$queue = $prefix . $queue;
-	$self->{dbh}->do(qq{unlisten "$queue";});
+	my $prefix = $args{reply} ?  RESPONSE_PREFIX :  QUEUE_PREFIX;
+	for my $q (ref $queue ? @$queue : ($queue)) {
+		$self->{dbh}->do(qq{unlisten "$prefix$q";});
+	}
 }
 
 sub notify {
-    my ($self, %args) = @_;
-    my $queue = $args{queue} || return undef;
+	my ($self, %args) = @_;
+	my $queue = $args{queue} || return undef;
 
-    my $prefix = $args{reply} ?  RESPONSE_PREFIX :  QUEUE_PREFIX;
+	my $prefix = $args{reply} ?  RESPONSE_PREFIX :  QUEUE_PREFIX;
 	$queue = $prefix . $queue;
 	$self->{dbh}->do(qq{notify "$queue";});
 }
@@ -69,7 +75,8 @@ sub set_listen {
 }
 
 sub fetch_work_task {
-	my ($self,$queue,$pid) = @_;
+	my ($self,$pid) = @_;
+	my $queue = ref $self->{queue} ? $self->{queue} : [$self->{queue}];
 	$self->{current_table} = 'task';
 	my $sql = qq{
 		UPDATE
@@ -77,7 +84,11 @@ sub fetch_work_task {
 		SET
 			status=100,
 			modified=default
+		FROM
+			"jobmachine".class cx
 		WHERE
+			t.class_id = cx.class_id
+		AND
 			task_id = (
 				SELECT
 					min(task_id)
@@ -90,7 +101,9 @@ sub fetch_work_task {
 				WHERE
 					t.status=0
 				AND
-					c.name=?
+					c.name IN (}.
+		join(',', ('?') x @$queue)
+		.qq{)
 				AND
 					t.run_after IS NULL
 				OR
@@ -104,7 +117,7 @@ sub fetch_work_task {
 	};
 	my $task = $self->select_first(
 		sql => $sql,
-		data => [$queue]
+		data => $queue
 	) || return;
 
 	$self->{task_id} = $task->{task_id};
@@ -123,6 +136,8 @@ sub insert_task {
 			(class_id,parameters,status)
 		VALUES
 			(?,?,?)
+		RETURNING
+			task_id
 	};
 	$self->insert(sql => $sql,data => [$class->{class_id},$frozen,0]);
 }
@@ -165,7 +180,7 @@ sub insert_class {
 		VALUES
 			(?)
 		RETURNING
-			*
+			class_id
 	};
 	$self->select_first(sql => $sql,data => [$queue]);
 }
@@ -180,6 +195,8 @@ sub insert_result {
 			(task_id,result)
 		VALUES
 			(?,?)
+		RETURNING
+			result_id
 	};
 	$self->insert(sql => $sql,data => [$self->{task_id},$frozen]);
 }
@@ -212,30 +229,17 @@ sub revive_tasks {
 	$self->{current_table} = 'task';
 	my $status = 100;
 	my $sql = qq{
-		SELECT
-			task_id
-		FROM
-			"$self->{schema}".$self->{current_table}
-		WHERE
-			status=?
-		AND
-			modified < now() - INTERVAL '$max seconds'
-	};
-	my $result = $self->select_all(sql => $sql,data => [$status]) || return 0;
-
-	return 0 unless @$result;
-
-	my $task_ids = join ',',map {$_->{task_id}} @$result;
-	$sql = qq{
 		UPDATE
 			"$self->{schema}".$self->{current_table}
 		SET
 			status=0
 		WHERE
-			task_id IN ($task_ids)
+			status=?
+		AND
+			modified < now() - INTERVAL '$max seconds'
 	};
-	$self->do(sql => $sql,data => [$status]);
-	return scalar @$result;
+	my $result = $self->do(sql => $sql,data => [$status]);
+	return $result;
 }
 
 # 1. Find tasks that have failed too many times (# of result rows > $self->retries
@@ -259,7 +263,6 @@ sub fail_tasks {
 		LIMIT ?
 	};
 	my $result = $self->select_all(sql => $sql,data => [$retries,$limit]) || return 0;
-
 	return 0 unless @$result;
 
 	my $task_ids = join ',',map {$_->{task_id}} @$result;
@@ -287,32 +290,19 @@ sub remove_tasks {
 	$self->{current_table} = 'task';
 	my $limit = 100;
 	my $sql = qq{
-		SELECT
-			task_id
-		FROM
+		DELETE FROM
 			"$self->{schema}".$self->{current_table}
 		WHERE
 			modified < now() - INTERVAL '$after days'
 	};
-	my $result = $self->select_all(sql => $sql,data => []) || return 0;
-
-	return 0 unless @$result;
-
-	my $task_ids = join ',',map {$_->{task_id}} @$result;
-	$self->{current_table} = 'task';
-	$sql = qq{
-		DELETE FROM
-			"$self->{schema}".$self->{current_table}
-		WHERE
-			task_id IN ($task_ids)
-	};
-	$self->do(sql => $sql,data => []);
-	return scalar @$result;
+	my $result = $self->do(sql => $sql,data => []);
+	return $result;
 }
 
 sub select_first {
-    my ($self, %args) = @_;
-	my $sth = ($args{sth}) ? $args{sth} : $self->dbh->prepare($args{sql}) || return 0;
+	my ($self, %args) = @_;
+	my $sth = defined $args{sth} ? $args{sth} : $self->dbh->prepare($args{sql}) || return 0;
+
 	unless($sth->execute(@{$args{data}})) {
 		my @c = caller;
 		print STDERR "File: $c[1] line $c[2]\n";
@@ -325,8 +315,8 @@ sub select_first {
 }
 
 sub select_all {
-    my ($self, %args) = @_;
-	my $sth = ($args{sth}) ? $args{sth} : $self->dbh->prepare($args{sql}) || return 0;
+	my ($self, %args) = @_;
+	my $sth = defined $args{sth} ? $args{sth} : $self->dbh->prepare($args{sql}) || return 0;
 
 	$self->set_bind_type($sth,$args{data});
 	unless($sth->execute(@{$args{data}})) {
@@ -339,6 +329,7 @@ sub select_all {
 	while( my $r = $sth->fetchrow_hashref) {
 			push(@result,$r);
 	}
+	$sth->finish();
 	return ( \@result );
 }
 
@@ -355,30 +346,24 @@ sub set_bind_type {
 
 sub do {
 	my ($self, %args) = @_;
-	my $sth;
-	if ($args{sth}) {
-		$sth = $args{sth};
-	} elsif ($args{sql}) {
-		$sth = $self->dbh->prepare($args{sql});
-	} else {
-		$sth = $self->{last_sth} || return undef;
-	}
-	$self->{last_sth} = $sth;
-	return $sth->execute(@{$args{data}});
-}
-
-sub prepare {
-	my ($self, %args) = @_;
-	my $sth = $self->dbh->prepare($args{sql} || return undef) || return undef;
+	my $sth = defined $args{sth} ? $args{sth} : $self->dbh->prepare($args{sql}) || return 0;
 
 	$self->{last_sth} = $sth;
-	return $sth;
+	$sth->execute(@{$args{data}});
+	my $rows = $sth->rows;
+	$sth->finish();
+	return $rows;
 }
 
 sub insert {
-	my $self = shift;
-	$self->do(@_);
-	return $self->dbh->last_insert_id(undef,$self->{schema},$self->{current_table},undef);
+	my ($self, %args) = @_;
+	my $sth = defined $args{sth} ? $args{sth} : $self->dbh->prepare($args{sql}) || return 0;
+
+	$self->{last_sth} = $sth;
+	$sth->execute(@{$args{data}});
+	my $retval = $sth->fetch()->[0];
+	$sth->finish();
+	return $retval;
 }
 
 sub update {
@@ -394,13 +379,14 @@ sub dbh {
 sub task_id {
 	return $_[0]->{task_id} || confess "No task id";
 }
+
 sub disconnect {
 	return $_[0]->{dbh}->disconnect if $_[0]->{dbh};
 }
 
 sub DESTROY {
-    $_[0]->disconnect();
-    return;
+	$_[0]->disconnect();
+	return;
 }
 
 1;
@@ -414,7 +400,7 @@ Job::Machine::DB
 
 =head1 VERSION
 
-version 0.15
+version 0.16
 
 =head1 NAME
 
@@ -425,13 +411,13 @@ Job::Machine::DB - Database class for Job::Machine
 =head2 new
 
   my $client = Job::Machine::DB->new(
-      dbh   => $dbh,
-      queue => 'queue.subqueue',
+	  dbh   => $dbh,
+	  queue => 'queue.subqueue',
 
   );
 
   my $client = Job::Machine::Base->new(
-      dsn   => @dsn,
+	  dsn   => @dsn,
   );
 
 =head2 set_listen
@@ -444,7 +430,7 @@ Kaare Rasmussen <kaare at cpan dot net>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2010 by Kaare Rasmussen.
+This software is copyright (c) 2011 by Kaare Rasmussen.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

@@ -30,7 +30,7 @@ my %WriteMakefileArgs = (
     'JSON::XS' => '0',
     'constant' => '0'
   },
-  'VERSION' => '0.15',
+  'VERSION' => '0.16',
   'test' => {
     'TESTS' => 't/*.t'
   }

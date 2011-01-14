@@ -1,6 +1,6 @@
 package Job::Machine::Base;
 BEGIN {
-  $Job::Machine::Base::VERSION = '0.15';
+  $Job::Machine::Base::VERSION = '0.16';
 }
 
 use strict;
@@ -48,7 +48,7 @@ Job::Machine::Base
 
 =head1 VERSION
 
-version 0.15
+version 0.16
 
 =head1 NAME
 
@@ -58,24 +58,35 @@ Job::Machine::Base - Base class both for Client and Worker Classes
 
 =head2 new
 
-  my $client = Job::Machine::Base->new(
-	  dbh   => $dbh,
-	  queue => 'queue',
+	my $client = Job::Machine::Base->new(
+		dbh   => $dbh,
+		queue => 'queue',
+	);
 
-  );
+	my $client = Job::Machine::Base->new(
+		dsn      => $dsn,
+		user     => $user,
+		password => $password,
+		db_attr  => $db_attributes
+		...
+	);
 
-  my $client = Job::Machine::Base->new(
-	  dsn   => @dsn,
-  );
+=head3 Worker:
 
-Arguments:
+	my $worker = Job::Machine::Base->new(
+		queue => [qw/q1 q2/],
+		...
+	);
+
+=head3 Arguments:
 
 Either provide an already warm database handle, or give a new array to tell how
 to open a database.
 
- queue is the channel to the worker.
- timeout is how long to wait for notifications before doing a housekeeping loop.
- Default is 5 minutes.
+	Client: queue is the channel to the worker.
+	Worker: queue is what the worker is listening to. Can be a scalar or arrayref. 
+	timeout is how long to wait for notifications before doing a housekeeping loop.
+	Default is 5 minutes.
 
 =head2 log
 
@@ -104,7 +115,7 @@ Kaare Rasmussen <kaare at cpan dot net>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2010 by Kaare Rasmussen.
+This software is copyright (c) 2011 by Kaare Rasmussen.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

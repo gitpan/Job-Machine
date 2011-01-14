@@ -1,6 +1,6 @@
 package Job::Machine::Client;
 BEGIN {
-  $Job::Machine::Client::VERSION = '0.15';
+  $Job::Machine::Client::VERSION = '0.16';
 }
 
 use strict;
@@ -28,7 +28,7 @@ sub uncheck {
 	$id ||= $self->id;
 	delete $self->{subscribed};
 	$self->db->unlisten(queue => $id, reply => 1);
-	return $self->db->get_notification;
+	return 1;
 }
 
 sub receive {
@@ -48,7 +48,7 @@ Job::Machine::Client
 
 =head1 VERSION
 
-version 0.15
+version 0.16
 
 =head1 NAME
 
@@ -75,7 +75,7 @@ Job::Machine::Client - Class for Job Clients
 
 =head2 uncheck
 
- Check for reply. 
+ Stop check for reply. 
  
  Parameter: The message id.
 
@@ -110,7 +110,7 @@ Kaare Rasmussen <kaare at cpan dot net>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2010 by Kaare Rasmussen.
+This software is copyright (c) 2011 by Kaare Rasmussen.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

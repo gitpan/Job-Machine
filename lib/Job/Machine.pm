@@ -1,6 +1,6 @@
 package Job::Machine;
 BEGIN {
-  $Job::Machine::VERSION = '0.15';
+  $Job::Machine::VERSION = '0.16';
 }
 
 1;
@@ -14,7 +14,7 @@ Job::Machine
 
 =head1 VERSION
 
-version 0.15
+version 0.16
 
 =head1 SYNOPSIS
 
@@ -79,6 +79,25 @@ for any method call.
 The queue can be named anything PostgreSQL accepts. A good idea is to maintain a
 hierarchical structure. e.g. I<gl.accounting> or I<message.email>.
 
+=head2 Extra Parameters
+
+You might have some already initialized data you want to pass to your worker
+instance. Job::Machine just pushes any extra parameter you send it into the
+object, so you can always access it from your process method.
+
+There's no reason to repeat your configuration process in the worker if you already
+have it when the worker starts:
+
+	my $config = C<some lenghty process>
+
+	my $worker = SMSio::Worker::CPA->new(
+		...
+		config => $config,
+	);
+	$worker->receive;
+
+You can access $self->{config} e.g. in your worker's startup and process methods.
+
 =head1 NAME
 
 Job::Machine - Job queue handling
@@ -104,7 +123,7 @@ Kaare Rasmussen <kaare at cpan dot net>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2010 by Kaare Rasmussen.
+This software is copyright (c) 2011 by Kaare Rasmussen.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.

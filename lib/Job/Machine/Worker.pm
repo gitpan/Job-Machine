@@ -1,6 +1,6 @@
 package Job::Machine::Worker;
 BEGIN {
-  $Job::Machine::Worker::VERSION = '0.15';
+  $Job::Machine::Worker::VERSION = '0.16';
 }
 
 use strict;
@@ -44,7 +44,7 @@ sub receive {
 sub _check_queue {
 	my $self = shift;
 	my $db = $self->{db};
-	while (my $task = $self->db->fetch_work_task($self->{queue})) {
+	while (my $task = $self->db->fetch_work_task) {
 		## log process call
 		$self->process($task);
 	}
@@ -99,7 +99,7 @@ Job::Machine::Worker
 
 =head1 VERSION
 
-version 0.15
+version 0.16
 
 =head1 DESCRIPTION
 
@@ -111,6 +111,7 @@ version 0.15
 
   sub process {
 	  my ($self, $task) = @_;
+	  $queuename = $task->{name};
 	  ... do stuff
   };
 
@@ -203,6 +204,8 @@ Worker will wait for next message if this method returns true.
 
 =head3 id
 
+  Get the current task id.
+
 =head2 methods not to be disturbed
 
 =head3 receive
@@ -235,7 +238,7 @@ Kaare Rasmussen <kaare at cpan dot net>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2010 by Kaare Rasmussen.
+This software is copyright (c) 2011 by Kaare Rasmussen.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
