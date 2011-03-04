@@ -1,6 +1,6 @@
 package Job::Machine::Client;
 BEGIN {
-  $Job::Machine::Client::VERSION = '0.16';
+  $Job::Machine::Client::VERSION = '0.17';
 }
 
 use strict;
@@ -48,7 +48,12 @@ Job::Machine::Client
 
 =head1 VERSION
 
-version 0.16
+version 0.17
+
+=head1 SYNOPSIS
+
+  my $client = Job::Machine::Client->new(dbh => $dbh, queue => 'job.task');
+  my $id = $client->send({foo => 'bar'});
 
 =head1 NAME
 
@@ -62,6 +67,7 @@ Job::Machine::Client - Class for Job Clients
 
   Parameters
   data - data to pass to the worker process
+  queue - optional queue name. Not needed if already set in new
 
  Returns the message id.
 

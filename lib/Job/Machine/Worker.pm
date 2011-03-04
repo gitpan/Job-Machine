@@ -1,6 +1,6 @@
 package Job::Machine::Worker;
 BEGIN {
-  $Job::Machine::Worker::VERSION = '0.16';
+  $Job::Machine::Worker::VERSION = '0.17';
 }
 
 use strict;
@@ -24,6 +24,12 @@ sub result {
 	$queue ||= $self->{queue};
 	$self->db->insert_result($data,$queue);
 	$self->db->set_task_status(200);
+}
+
+sub error_result {
+	my ($self,$data,$queue) = @_;
+	$queue ||= $self->{queue};
+	$self->db->insert_result($data,$queue);
 }
 
 sub receive {
@@ -99,13 +105,20 @@ Job::Machine::Worker
 
 =head1 VERSION
 
-version 0.16
+version 0.17
 
 =head1 DESCRIPTION
 
-  Inherits from Job::Machine::Base.
-  
-  All you have to do to write a worker for a particular Job Class is
+=head2 Write a script to instantiate your class and start the receive loop:
+
+  my $worker = My::Worker->new(dbh => $dbh, queue => 'job.task');
+  $worker->receive;
+
+=head2 Write the Worker Class
+
+  Job::Machine::Worker inherits from Job::Machine::Base. All you have to do is
+
+  package My::Worker;
   
   use base 'Job::Machine::Worker';
 
@@ -155,7 +168,7 @@ is only used when reviving tasks that are suspected to be dead.
 =head3 timeout
 
 If the default of 5 minutes isn't suitable, return the number of seconds the
-worker should wait for inout before doing housekeeping chores.
+worker should wait for notifications before doing housekeeping chores.
 
 If you don't want the worker to perform any housekeeping tasks, return undef
 
@@ -187,11 +200,23 @@ Worker will wait for next message if this method returns true.
 
 =head3 result
 
-  $worker->result($result_data);
+	Use from within a Worker's process method.
 
-  Save the result of the task. Use from within a Worker's process method.
+	$worker->result($result_data);
 
-  Marks the task as done,
+	Save the result of the task.
+
+	Marks the task as done,
+
+=head3 error_result
+
+	Use from within a Worker's process method.
+
+	$worker->error_result($result_data);
+
+	Save the result of the task.
+
+	Does NOT change the job status,
 
 =head3 db
 

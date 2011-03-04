@@ -20,7 +20,7 @@ my %module_build_args = (
     'Kaare Rasmussen <kaare at cpan dot net>'
   ],
   'dist_name' => 'Job-Machine',
-  'dist_version' => '0.16',
+  'dist_version' => '0.17',
   'license' => 'perl',
   'module_name' => 'Job::Machine',
   'recommends' => {},

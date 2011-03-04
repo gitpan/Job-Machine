@@ -1,6 +1,6 @@
 package Job::Machine;
 BEGIN {
-  $Job::Machine::VERSION = '0.16';
+  $Job::Machine::VERSION = '0.17';
 }
 
 1;
@@ -14,9 +14,15 @@ Job::Machine
 
 =head1 VERSION
 
-version 0.16
+version 0.17
 
 =head1 SYNOPSIS
+
+The Database:
+
+The Schema of Job::Machine is in sql/create_tables.sql. Just install it into your
+database. It is environmental friendly (will not pollute your namespace). By default
+it installs in a new jobmachine schema (PostgreSQL schema, not e,g, DBIC schema).
 
 The Client:
 
