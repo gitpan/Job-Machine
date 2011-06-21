@@ -1,6 +1,6 @@
 package Job::Machine::Base;
 BEGIN {
-  $Job::Machine::Base::VERSION = '0.17';
+  $Job::Machine::Base::VERSION = '0.18';
 }
 
 use strict;
@@ -48,7 +48,7 @@ Job::Machine::Base
 
 =head1 VERSION
 
-version 0.17
+version 0.18
 
 =head1 NAME
 

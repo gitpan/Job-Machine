@@ -1,6 +1,6 @@
 package Job::Machine::Client;
 BEGIN {
-  $Job::Machine::Client::VERSION = '0.17';
+  $Job::Machine::Client::VERSION = '0.18';
 }
 
 use strict;
@@ -48,7 +48,7 @@ Job::Machine::Client
 
 =head1 VERSION
 
-version 0.17
+version 0.18
 
 =head1 SYNOPSIS
 

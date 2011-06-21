@@ -12,7 +12,7 @@ my %module_build_args = (
     'Test::More' => '0'
   },
   'configure_requires' => {
-    'ExtUtils::MakeMaker' => '6.31',
+    'ExtUtils::MakeMaker' => '6.30',
     'Module::Build' => '0.3601'
   },
   'dist_abstract' => 'Job queue handling',
@@ -20,7 +20,7 @@ my %module_build_args = (
     'Kaare Rasmussen <kaare at cpan dot net>'
   ],
   'dist_name' => 'Job-Machine',
-  'dist_version' => '0.17',
+  'dist_version' => '0.18',
   'license' => 'perl',
   'module_name' => 'Job::Machine',
   'recommends' => {},
@@ -28,7 +28,7 @@ my %module_build_args = (
   'requires' => {
     'Carp' => '0',
     'DBI' => '0',
-    'JSON::XS' => '0',
+    'JSON' => '0',
     'constant' => '0'
   },
   'script_files' => []

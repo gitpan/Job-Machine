@@ -1,13 +1,13 @@
 package Job::Machine::DB;
 BEGIN {
-  $Job::Machine::DB::VERSION = '0.17';
+  $Job::Machine::DB::VERSION = '0.18';
 }
 
 use strict;
 use warnings;
 use Carp qw/croak confess/;
 use DBI;
-use JSON::XS;
+use JSON;
 
 use constant QUEUE_PREFIX    => 'jm:';
 use constant RESPONSE_PREFIX => 'jmr:';
@@ -23,6 +23,11 @@ sub new {
 	$args{dbh}      ||= DBI->connect($args{dsn},$args{user},$args{password},$args{db_attr});
 	$args{schema}   ||= 'jobmachine';
 	return bless \%args, $class;
+}
+
+sub json {
+	my ($self) = @_;
+	return $self->{json} ||= JSON->new->allow_nonref;
 }
 
 sub listen {
@@ -124,7 +129,7 @@ sub fetch_work_task {
 	) || return;
 
 	$self->{task_id} = $task->{task_id};
-	$task->{data} = decode_json( delete $task->{parameters} );
+	$task->{data} = $self->_decode(delete $task->{parameters});
 	return $task;
 }
 
@@ -132,7 +137,7 @@ sub insert_task {
 	my ($self,$data,$queue) = @_;
 	my $class = $self->fetch_class($queue);
 	$self->{current_table} = 'task';
-	my $frozen = encode_json($data);
+	my $frozen = $self->json->encode($data);
 	my $sql = qq{
 		INSERT INTO
 			"$self->{schema}".$self->{current_table}
@@ -191,7 +196,7 @@ sub insert_class {
 sub insert_result {
 	my ($self,$data,$queue) = @_;
 	$self->{current_table} = 'result';
-	my $frozen = encode_json($data);
+	my $frozen = $self->json->encode($data);
 	my $sql = qq{
 		INSERT INTO
 			"$self->{schema}".$self->{current_table}
@@ -219,7 +224,7 @@ sub fetch_result {
 	};
 	my $result = $self->select_first(sql => $sql,data => [$id]) || return;
 
-	return decode_json($result->{result})->{data};
+	return $self->_decode($result->{result})->{data};
 }
 
 sub fetch_results {
@@ -235,9 +240,22 @@ sub fetch_results {
 		ORDER BY
 			result_id DESC
 	};
-	my $results = $self->select(sql => $sql,data => [$id]) || return;
+	my $results = $self->select_all(sql => $sql,data => [$id]) || return;
 
-	return [map { decode_json($_->{result}) } @{ $results } ];
+	return [map { $self->_decode($_->{result}) } @{ $results } ];
+}
+
+sub _decode {
+	my ($self,$data) = @_;
+	my $resultdata;
+	eval {
+		$resultdata = $self->json->utf8(!utf8::is_utf8($resultdata))->decode($data);
+	};
+	 if ($@) {
+		warn $@;
+		return;
+	}
+	return $resultdata;
 }
 
 # 1. Find started tasks that have passed the time limit, most probably because 
@@ -321,7 +339,7 @@ sub remove_tasks {
 
 sub select_first {
 	my ($self, %args) = @_;
-	my $sth = defined $args{sth} ? $args{sth} : $self->dbh->prepare($args{sql}) || return 0;
+	my $sth = $self->dbh->prepare($args{sql}) || return 0;
 
 	unless($sth->execute(@{$args{data}})) {
 		my @c = caller;
@@ -336,9 +354,9 @@ sub select_first {
 
 sub select_all {
 	my ($self, %args) = @_;
-	my $sth = defined $args{sth} ? $args{sth} : $self->dbh->prepare($args{sql}) || return 0;
+	my $sth = $self->dbh->prepare($args{sql}) || return 0;
 
-	$self->set_bind_type($sth,$args{data});
+	$self->set_bind_type($sth,$args{data} || []);
 	unless($sth->execute(@{$args{data}})) {
 		my @c = caller;
 		print STDERR "File: $c[1] line $c[2]\n";
@@ -366,7 +384,7 @@ sub set_bind_type {
 
 sub do {
 	my ($self, %args) = @_;
-	my $sth = defined $args{sth} ? $args{sth} : $self->dbh->prepare($args{sql}) || return 0;
+	my $sth = $self->dbh->prepare($args{sql}) || return 0;
 
 	$sth->execute(@{$args{data}});
 	my $rows = $sth->rows;
@@ -376,7 +394,7 @@ sub do {
 
 sub insert {
 	my ($self, %args) = @_;
-	my $sth = defined $args{sth} ? $args{sth} : $self->dbh->prepare($args{sql}) || return 0;
+	my $sth = $self->dbh->prepare($args{sql}) || return 0;
 
 	$sth->execute(@{$args{data}});
 	my $retval = $sth->fetch()->[0];
@@ -418,7 +436,7 @@ Job::Machine::DB
 
 =head1 VERSION
 
-version 0.17
+version 0.18
 
 =head1 NAME
 
@@ -440,7 +458,42 @@ Job::Machine::DB - Database class for Job::Machine
 
 =head2 set_listen
 
-Sets up the listener
+ $self->listen( queue => 'queue_name' );
+ $self->listen( queue => \@queues, reply => 1  );
+
+Sets up the listener.  Quit listening to the named queues. If 'reply' is
+passed, we unlisten to the related reply queue instead of the task queue.
+
+Return undef immediately if no queue is provided.
+
+=head2 unlisten
+
+ $self->unlisten( queue => 'queue_name' );
+ $self->unlisten( queue => \@queues, reply => 1  );
+
+Quit listening to the named queues. If 'reply' is passed, we unlisten
+to the related reply queue instead of the task queue.
+
+Return undef immediately if no queue is provided.
+
+=head2 notify
+
+ $self->notify( queue => 'queue_name' );
+ $self->notify( queue => 'queue_name', reply => 1, payload => $data  );
+
+Sends an asynchronous notification to the named queue, with an optional
+payload. If 'reply' is true, then the queue names are taken to be reply.
+
+Return undef immediately if no queue name is provided.
+
+=head2 get_notification
+
+ my $notifies = $self->get_notification();
+
+Retrievies the pending notifications. The return value is an arrayref where
+each row looks like this:
+
+ my ($name, $pid, $payload) = @$notify;
 
 =head1 AUTHOR
 
