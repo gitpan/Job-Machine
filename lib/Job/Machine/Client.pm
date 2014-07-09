@@ -1,8 +1,5 @@
 package Job::Machine::Client;
-BEGIN {
-  $Job::Machine::Client::VERSION = '0.18';
-}
-
+$Job::Machine::Client::VERSION = '0.19';
 use strict;
 use warnings;
 
@@ -39,8 +36,11 @@ sub receive {
 
 1;
 
+__END__
 
 =pod
+
+=encoding UTF-8
 
 =head1 NAME
 
@@ -48,7 +48,7 @@ Job::Machine::Client
 
 =head1 VERSION
 
-version 0.18
+version 0.19
 
 =head1 SYNOPSIS
 
@@ -105,7 +105,7 @@ Kaare Rasmussen <kaare@cpan.org>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2009-2010, Kaare Rasmussen
+Copyright (C) 2009,2014, Kaare Rasmussen
 
 This module is free software; you can redistribute it or modify it
 under the same terms as Perl itself.
@@ -116,12 +116,9 @@ Kaare Rasmussen <kaare at cpan dot net>
 
 =head1 COPYRIGHT AND LICENSE
 
-This software is copyright (c) 2011 by Kaare Rasmussen.
+This software is copyright (c) 2014 by Kaare Rasmussen.
 
 This is free software; you can redistribute it and/or modify it under
 the same terms as the Perl 5 programming language system itself.
 
 =cut
-
-
-__END__
